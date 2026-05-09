@@ -1,4 +1,4 @@
-# EVC32 EVCC Switch
+# ESP32 EVCC Switch
 
 Touch-Bedienteil fuer eine EVCC-gesteuerte Wallbox auf einem ESP32 Cheap Yellow Display.
 
@@ -19,7 +19,7 @@ Dieses Projekt ist fuer GitHub Pages mit ESP Web Tools vorbereitet. Sobald die G
 
 Nach dem ersten Start oeffnet das Geraet ein WLAN `EVCC-Switch` mit dem Passwort `evccswitch`. Dort werden WLAN, EVCC-IP, Port, Loadpoint-ID und der Standardmodus eingetragen.
 
-Repository: <https://github.com/tobymarks/evc32-evcc-switch>
+Repository: <https://github.com/tobymarks/esp32-evcc-switch>
 
 ## Setup
 
