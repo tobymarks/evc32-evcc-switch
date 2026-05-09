@@ -39,6 +39,9 @@
 #ifndef TOUCH_ROTATION
 #define TOUCH_ROTATION 0
 #endif
+#ifndef GFXFF
+#define GFXFF 1
+#endif
 
 namespace {
 
@@ -61,9 +64,9 @@ constexpr uint32_t WifiRetryMs = 10000;
 constexpr uint32_t TouchDebounceMs = 450;
 constexpr uint32_t EvccTimeoutMs = 8000;
 
-constexpr uint16_t ColorBg = 0xF79F;
+constexpr uint16_t ColorBg = 0xF79E;
 constexpr uint16_t ColorCard = TFT_WHITE;
-constexpr uint16_t ColorLine = 0xDEFB;
+constexpr uint16_t ColorLine = 0xD6DA;
 constexpr uint16_t ColorSoft = 0xEF5D;
 constexpr uint16_t ColorText = 0x2927;
 constexpr uint16_t ColorMuted = 0x8C92;
@@ -113,10 +116,10 @@ AppConfig appConfig;
 EvccState state;
 
 ModeButton buttons[] = {
-    {18, 166, 50, 24, "Aus", "off", ColorError},
-    {68, 166, 42, 24, "PV", "pv", ColorEvcc},
-    {110, 166, 60, 24, "Min+PV", "minpv", ColorEvccDark},
-    {170, 166, 52, 24, "Schnell", "now", ColorWarn},
+    {12, 154, 52, 34, "Aus", "off", ColorError},
+    {64, 154, 42, 34, "PV", "pv", ColorEvcc},
+    {106, 154, 62, 34, "Min+PV", "minpv", ColorEvccDark},
+    {168, 154, 60, 34, "Schnell", "now", ColorWarn},
 };
 
 uint32_t lastPoll = 0;
@@ -166,14 +169,28 @@ String formatPower(float watts) {
 }
 
 void drawText(int16_t x, int16_t y, const String &text, uint16_t color, uint8_t size = 1, uint16_t bg = ColorBg) {
+  tft.setFreeFont(nullptr);
+  tft.setTextFont(1);
   tft.setTextColor(color, bg);
   tft.setTextSize(size);
   tft.setCursor(x, y);
   tft.print(text);
 }
 
+void drawGfxText(int16_t x, int16_t y, const String &text, const GFXfont *font, uint16_t color, uint16_t bg = ColorBg,
+                 uint8_t datum = TL_DATUM) {
+  tft.setTextSize(1);
+  tft.setFreeFont(font);
+  tft.setTextDatum(datum);
+  tft.setTextColor(color, bg, true);
+  tft.drawString(text, x, y, GFXFF);
+  tft.setTextDatum(TL_DATUM);
+  tft.setFreeFont(nullptr);
+}
+
 void drawCard(int16_t x, int16_t y, int16_t w, int16_t h) {
-  tft.fillRoundRect(x, y, w, h, 16, ColorCard);
+  tft.fillRect(x, y, w, h, ColorCard);
+  tft.drawRect(x, y, w, h, ColorLine);
 }
 
 void drawStatusLine(int16_t y, const String &label, const String &value, uint16_t valueColor = ColorText) {
@@ -191,12 +208,9 @@ void drawButton(const ModeButton &button) {
   const uint16_t fill = active ? ColorEvccDark : ColorCard;
   const uint16_t text = active ? TFT_WHITE : ColorText;
 
-  tft.fillRoundRect(button.x, button.y, button.w, button.h, 11, fill);
-  tft.setTextColor(text, fill);
-  tft.setTextSize(1);
-  tft.setTextDatum(MC_DATUM);
-  tft.drawString(button.label, button.x + button.w / 2, button.y + button.h / 2);
-  tft.setTextDatum(TL_DATUM);
+  tft.fillRect(button.x, button.y, button.w, button.h, fill);
+  tft.drawRect(button.x, button.y, button.w, button.h, active ? ColorEvccDark : ColorLine);
+  drawGfxText(button.x + button.w / 2, button.y + 8, button.label, &FreeSansBold9pt7b, text, fill, TC_DATUM);
 }
 
 String renderKey() {
@@ -213,13 +227,19 @@ void clearCardArea(int16_t x, int16_t y, int16_t w, int16_t h) {
 void drawStaticLayout() {
   tft.fillScreen(ColorBg);
 
-  drawCard(12, 62, 216, 78);
-  drawText(24, 78, "LEISTUNG", ColorMuted, 1, ColorCard);
-  drawText(148, 78, "MODUS", ColorMuted, 1, ColorCard);
+  tft.fillRect(0, 56, ScreenW, 2, ColorText);
 
-  drawCard(12, 150, 216, 144);
-  tft.drawRoundRect(18, 166, 204, 24, 12, ColorLine);
-  tft.drawFastHLine(12, 200, 216, ColorLine);
+  drawCard(12, 66, 216, 72);
+  tft.drawFastVLine(120, 66, 72, ColorLine);
+  drawText(22, 78, "LEISTUNG", ColorMuted, 1, ColorCard);
+  drawText(132, 78, "MODUS", ColorMuted, 1, ColorCard);
+
+  tft.drawRect(12, 154, 216, 34, ColorLine);
+
+  drawCard(12, 204, 216, 90);
+  tft.drawFastHLine(12, 248, 216, ColorLine);
+  tft.drawFastVLine(84, 248, 46, ColorLine);
+  tft.drawFastVLine(156, 248, 46, ColorLine);
 
   tft.fillRect(0, 304, ScreenW, 16, ColorCard);
   tft.drawFastHLine(0, 304, ScreenW, ColorLine);
@@ -250,26 +270,26 @@ void render(bool full = false) {
   if (full || topKey != lastTopKey) {
     lastTopKey = topKey;
     tft.fillRect(0, 0, ScreenW, 58, ColorBg);
-    drawText(14, 16, state.title.substring(0, 12), ColorText, 2);
-    drawText(168, 18, wifiOk ? (state.evccOk ? "online" : "wifi") : "offline", wifiOk && state.evccOk ? ColorEvcc : ColorWarn);
-    drawText(14, 42, String("EVCC LP ") + String(appConfig.loadpointId), ColorMuted);
+    drawGfxText(12, 9, state.title.substring(0, 10), &FreeSansBold18pt7b, ColorText);
+    drawText(14, 43, String("EVCC LP ") + String(appConfig.loadpointId), ColorMuted);
+    drawText(178, 43, wifiOk ? (state.evccOk ? "ONLINE" : "WIFI") : "OFFLINE", wifiOk && state.evccOk ? ColorEvccDark : ColorWarn);
   }
 
   const String powerKey = formatPower(state.chargePower) + "|" + modeLabel(state.mode);
   if (full || powerKey != lastPowerKey) {
     lastPowerKey = powerKey;
-    clearCardArea(24, 96, 88, 22);
-    drawText(24, 96, formatPower(state.chargePower), ColorText, 2, ColorCard);
-    clearCardArea(148, 96, 70, 12);
-    drawText(148, 96, modeLabel(state.mode), ColorText, 1, ColorCard);
-    tft.fillRect(24, 122, 180, 8, ColorCard);
-    tft.fillRoundRect(24, 122, 84, 8, 4, ColorEvcc);
-    tft.fillRoundRect(108, 122, 96, 8, 4, ColorWarn);
+    clearCardArea(22, 92, 86, 28);
+    drawGfxText(22, 91, formatPower(state.chargePower), &FreeSansBold12pt7b, ColorText, ColorCard);
+    clearCardArea(132, 92, 84, 28);
+    drawGfxText(132, 93, modeLabel(state.mode), &FreeSans9pt7b, ColorText, ColorCard);
+    tft.fillRect(22, 124, 184, 5, ColorCard);
+    tft.fillRect(22, 124, 86, 5, ColorEvcc);
+    tft.fillRect(108, 124, 98, 5, ColorWarn);
   }
 
   if (full || state.mode != lastModeKey) {
     lastModeKey = state.mode;
-    tft.fillRoundRect(19, 167, 202, 22, 11, ColorCard);
+    tft.fillRect(12, 154, 216, 34, ColorCard);
     for (const auto &button : buttons) {
       drawButton(button);
     }
@@ -278,9 +298,9 @@ void render(bool full = false) {
   const String vehicleKey = String(state.connected) + "|" + String(state.charging) + "|" + state.vehicle;
   if (full || vehicleKey != lastVehicleKey) {
     lastVehicleKey = vehicleKey;
-    clearCardArea(24, 214, 190, 36);
-    drawText(24, 214, state.connected ? "Fahrzeug verbunden" : "Kein Fahrzeug", ColorText, 2, ColorCard);
-    drawText(24, 238, state.charging ? "Laedt gerade." : "Nicht verbunden.", state.charging ? ColorEvcc : ColorMuted, 1, ColorCard);
+    clearCardArea(22, 215, 190, 30);
+    drawGfxText(22, 214, state.connected ? "Verbunden" : "Kein Fahrzeug", &FreeSansBold12pt7b, ColorText, ColorCard);
+    drawText(22, 238, state.charging ? "LAEDT GERADE" : "NICHT VERBUNDEN", state.charging ? ColorEvccDark : ColorMuted, 1, ColorCard);
   }
 
   const String errorKey = state.evccOk ? "" : state.error;
@@ -296,17 +316,17 @@ void render(bool full = false) {
   const String metricsKey = formatPower(state.pvPower) + "|" + formatPower(state.gridPower) + "|" + soc;
   if (full || metricsKey != lastMetricsKey) {
     lastMetricsKey = metricsKey;
-    clearCardArea(24, 270, 190, 24);
-    drawText(24, 270, "PV", ColorMuted, 1, ColorCard);
-    drawText(24, 286, formatPower(state.pvPower), ColorEvcc, 1, ColorCard);
-    drawText(96, 270, "NETZ", ColorMuted, 1, ColorCard);
-    drawText(96, 286, formatPower(state.gridPower), ColorText, 1, ColorCard);
-    drawText(174, 270, "SOC", ColorMuted, 1, ColorCard);
-    drawText(174, 286, soc, ColorText, 1, ColorCard);
+    clearCardArea(18, 258, 204, 30);
+    drawText(24, 258, "PV", ColorMuted, 1, ColorCard);
+    drawText(24, 276, formatPower(state.pvPower), ColorEvccDark, 1, ColorCard);
+    drawText(96, 258, "NETZ", ColorMuted, 1, ColorCard);
+    drawText(96, 276, formatPower(state.gridPower), ColorText, 1, ColorCard);
+    drawText(174, 258, "SOC", ColorMuted, 1, ColorCard);
+    drawText(174, 276, soc, ColorText, 1, ColorCard);
   }
 
   if (!state.evccOk && state.error.length()) {
-    tft.fillRoundRect(12, 262, 216, 30, 8, ColorError);
+    tft.fillRect(12, 262, 216, 30, ColorError);
     drawText(20, 273, state.error.substring(0, 28), TFT_WHITE, 1, ColorError);
   }
 }
@@ -571,7 +591,7 @@ void handleTouch() {
       continue;
     }
 
-    tft.fillRoundRect(12, 262, 216, 30, 8, ColorWarn);
+    tft.fillRect(12, 262, 216, 30, ColorWarn);
     drawText(20, 273, String("Setze Modus: ") + button.label, ColorText, 1, ColorWarn);
     setEvccMode(button.mode);
     fetchEvccState();

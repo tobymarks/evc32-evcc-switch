@@ -12,3 +12,4 @@ This project follows semantic versioning once the first stable release is publis
 - GitHub Pages web installer scaffold using ESP Web Tools.
 - Stream and filter the large EVCC `/api/state` response to avoid incomplete JSON reads on ESP32.
 - Reduce display flicker by redrawing only changed TFT regions after the initial layout render.
+- Refine CYD UI with a stricter grid, larger touch targets and TFT_eSPI FreeSans GFX fonts as an interim typography upgrade.
