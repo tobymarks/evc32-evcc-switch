@@ -192,7 +192,7 @@ h1 {
 
 .segmented {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 0.8fr 1.35fr 1fr;
   padding: 2px;
   border: 1px solid var(--line);
   border-radius: 999px;
