@@ -270,7 +270,7 @@ void drawStaticLayout() {
   tft.drawFastVLine(84, 56, 34, ColorLine);
   tft.drawFastVLine(156, 56, 34, ColorLine);
 
-  drawText(12, 94, "MODUS WAEHLEN", ColorMuted);
+  drawText(12, 94, "LADEMODUS", ColorMuted);
 
   drawCard(12, 226, 216, 68);
   tft.drawFastHLine(12, 258, 216, ColorLine);
